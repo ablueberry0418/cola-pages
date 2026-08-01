@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<meta name="theme-color" content="#8b7ad9">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="小田的悄悄话">
+<link rel="apple-touch-icon" href="./assets/cover.png">
+<title>小田的悄悄话</title>
+<link rel="stylesheet" href="./assets/fonts/fonts.css">
+<style>
+  :root{
+    --violet:#7b6cd6;
+    --violet-deep:#5b3fa8;
+    --blue:#7cc4f0;
+    --ink:#2a2a33;
+    --glass:rgba(255,255,255,.16);
+    --line:rgba(255,255,255,.28);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:'Ma Shan Zheng','Kaiti SC','STKaiti','KaiTi',cursive;
+    color:#fff;
+    overflow:hidden;
+    background:linear-gradient(160deg,#8b7ad9 0%,#9d8be6 28%,#8fb8ec 68%,#a9d5f3 100%);
+    height:100vh;height:100dvh;
+    user-select:none;-webkit-user-select:none;
+  }
+
+  /* ---------- 背景流动色块 ---------- */
+  .bg{position:fixed;inset:0;overflow:hidden;z-index:0;pointer-events:none}
+  .blob{position:absolute;border-radius:50%;filter:blur(72px);opacity:.55}
+  .blob.b1{width:62vmin;height:62vmin;top:-14vmin;left:-16vmin;background:#a78bfa;animation:drift1 16s ease-in-out infinite alternate}
+  .blob.b2{width:54vmin;height:54vmin;bottom:-10vmin;right:-12vmin;background:#6fc3f2;animation:drift2 19s ease-in-out infinite alternate}
+  .blob.b3{width:40vmin;height:40vmin;top:34%;left:30%;background:#f2b9dd;opacity:.38;animation:drift3 22s ease-in-out infinite alternate}
+  @keyframes drift1{to{transform:translate(9vmin,7vmin) scale(1.12)}}
+  @keyframes drift2{to{transform:translate(-8vmin,-6vmin) scale(1.08)}}
+  @keyframes drift3{to{transform:translate(-6vmin,9vmin) scale(1.15)}}
+
+  /* ---------- 通用屏幕 ---------- */
+  .screen{position:fixed;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 22px calc(24px + env(safe-area-inset-bottom));opacity:0;visibility:hidden;transition:opacity .5s ease}
+  .screen.show{opacity:1;visibility:visible}
+
+  /* ---------- 品牌角标 ---------- */
+  .brand{position:fixed;top:calc(18px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:2;display:flex;flex-direction:column;align-items:center;gap:7px;transition:opacity .5s ease,visibility .5s ease}
+  .brand.hide{opacity:0;visibility:hidden}
+  .brand .badge{width:46px;height:46px;border-radius:50%;background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(80,60,140,.22)}
+  .brand .badge svg{width:22px;height:22px;fill:#fff;filter:drop-shadow(0 1px 2px rgba(80,60,140,.35))}
+  .brand .word{font-size:11px;letter-spacing:.42em;text-indent:.42em;color:rgba(255,255,255,.85);text-shadow:0 1px 3px rgba(80,60,140,.3)}
+
+  /* ---------- 黑胶唱机 ---------- */
+  .stage{position:relative;width:min(74vw,310px);height:min(74vw,310px);margin:0 auto}
+  .disc-wrap{position:absolute;inset:0}
+  .disc{
+    position:absolute;inset:0;border-radius:50%;
+    background:
+      repeating-radial-gradient(circle at 50% 50%, #26262f 0 1.6px, #191920 1.6px 3.2px);
+    box-shadow:0 18px 44px rgba(50,35,110,.42), inset 0 0 0 3px rgba(255,255,255,.05), inset 0 0 26px rgba(0,0,0,.55);
+    animation:spin 8s linear infinite;
+    animation-play-state:paused;
+    will-change:transform;
+  }
+  .disc.playing{animation-play-state:running;box-shadow:0 22px 56px rgba(50,35,110,.5), 0 0 46px rgba(255,255,255,.28), inset 0 0 0 3px rgba(255,255,255,.07), inset 0 0 26px rgba(0,0,0,.5)}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .disc .label{
+    position:absolute;inset:19%;border-radius:50%;overflow:hidden;
+    box-shadow:0 0 0 6px rgba(255,255,255,.92), 0 0 0 9px rgba(60,45,120,.5), 0 6px 18px rgba(0,0,0,.35);
+    background:#cfe8f8;
+  }
+  .disc .label img{width:100%;height:100%;object-fit:cover;display:block}
+  .disc .label::after{content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 210deg, rgba(255,255,255,.34), transparent 22%, transparent 68%, rgba(255,255,255,.14));pointer-events:none}
+  .disc .hole{position:absolute;top:50%;left:50%;width:7%;height:7%;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle at 38% 32%, #4a4a58, #17171d 72%);box-shadow:inset 0 1px 2px rgba(255,255,255,.18), 0 1px 2px rgba(0,0,0,.5)}
+
+  /* 唱臂 */
+  .tonearm{
+    position:absolute;top:-4%;right:-7%;width:40%;z-index:3;
+    transform-origin:16px 84px;transform:rotate(-34deg);
+    transition:transform .65s cubic-bezier(.34,1.3,.5,1);
+    filter:drop-shadow(0 4px 8px rgba(40,25,90,.35));
+  }
+  .tonearm.playing{transform:rotate(-4deg)}
+
+  /* ---------- 标题 ---------- */
+  .title{position:relative;z-index:2;margin-top:26px;font-size:clamp(30px,8.4vw,42px);font-weight:400;letter-spacing:.12em;text-shadow:0 2px 14px rgba(70,50,140,.35);text-align:center}
+  .subtitle{position:relative;z-index:2;margin-top:4px;font-family:'Great Vibes','Snell Roundhand',cursive;font-size:clamp(17px,4.6vw,21px);color:rgba(255,255,255,.82);letter-spacing:.05em;text-shadow:0 1px 8px rgba(70,50,140,.3);text-align:center}
+
+  /* ---------- 进度条 ---------- */
+  .progress{position:relative;z-index:2;width:min(86%,340px);margin-top:22px;display:flex;align-items:center;gap:10px}
+  .progress .time{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;color:rgba(255,255,255,.88);font-variant-numeric:tabular-nums;min-width:34px}
+  .progress .time.end{text-align:right}
+  .track{position:relative;flex:1;height:26px;display:flex;align-items:center;cursor:pointer;touch-action:none}
+  .rail{position:relative;width:100%;height:4px;border-radius:99px;background:rgba(255,255,255,.4);box-shadow:0 0 0 1px rgba(255,255,255,.08) inset;overflow:visible}
+  .fill{position:absolute;left:0;top:0;bottom:0;width:0%;border-radius:99px;background:linear-gradient(90deg,#fff,#ffd9ee);box-shadow:0 0 8px rgba(255,255,255,.55)}
+  .thumb{
+    position:absolute;top:50%;left:0;width:20px;height:20px;transform:translate(-50%,-50%);
+    transition:left .08s linear;pointer-events:none;
+    filter:drop-shadow(0 1px 3px rgba(70,40,120,.5));
+  }
+  .thumb svg{width:100%;height:100%;fill:#fff;display:block}
+  .track.dragging .thumb{transform:translate(-50%,-50%) scale(1.22)}
+
+  /* ---------- 控制区 ---------- */
+  .controls{position:relative;z-index:2;width:min(88%,340px);margin-top:14px;display:flex;align-items:center;justify-content:space-between}
+  .ctl{width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:rgba(255,255,255,.82);cursor:pointer;touch-action:manipulation;border-radius:50%}
+  .ctl svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+  .ctl.active{color:#ffe9f6;text-shadow:0 0 10px rgba(255,255,255,.65)}
+  .ctl:active{transform:scale(.92)}
+  .play{
+    width:76px;height:76px;border-radius:50%;border:none;cursor:pointer;touch-action:manipulation;
+    background:radial-gradient(circle at 32% 28%, #ffffff, #f3e9ff 62%, #e0d2fb);
+    box-shadow:0 10px 26px rgba(60,40,130,.38), 0 0 0 1px rgba(255,255,255,.65) inset;
+    display:flex;align-items:center;justify-content:center;
+    animation:breathe 2.6s ease-in-out infinite;
+    transition:transform .15s ease,box-shadow .3s ease;
+  }
+  .play:active{transform:scale(.94)}
+  .play svg{width:34px;height:34px}
+  .play .ic-heart{fill:url(#heartGrad)}
+  .play .ic-pause{display:none;fill:none;stroke:url(#heartGrad);stroke-width:4;stroke-linecap:round}
+  .play.playing{animation:none;box-shadow:0 12px 30px rgba(60,40,130,.45), 0 0 0 6px rgba(255,255,255,.18)}
+  .play.playing .ic-heart{display:none}
+  .play.playing .ic-pause{display:block}
+  @keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+
+  .hint{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:2;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei','Segoe UI',sans-serif;font-size:13px;letter-spacing:.1em;color:#fff;background:rgba(45,32,95,.38);border:1px solid rgba(255,255,255,.22);padding:7px 16px;border-radius:99px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 4px 14px rgba(50,35,110,.3);white-space:nowrap;transition:opacity .4s ease}
+  .hint.hide{opacity:0}
+
+  /* ---------- 锁定页 ---------- */
+  .lock-card{
+    position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center;
+    padding:42px 34px;border-radius:26px;background:var(--glass);border:1px solid var(--line);
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    box-shadow:0 18px 44px rgba(60,40,130,.28);
+    max-width:86%;
+  }
+  .lock-icon{width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(60,40,130,.25)}
+  .lock-icon svg{width:30px;height:30px;fill:#fff;opacity:.92}
+  .lock-card h2{font-size:22px;font-weight:400;letter-spacing:.1em}
+  .lock-card p{font-size:14px;letter-spacing:.06em;color:rgba(255,255,255,.75);line-height:1.9}
+
+  /* ---------- 管理页 ---------- */
+  .admin{justify-content:flex-start;padding-top:calc(70px + env(safe-area-inset-top));overflow-y:auto}
+  .admin-card{position:relative;z-index:2;width:min(92%,420px);margin:0 auto;padding:28px 24px;border-radius:24px;background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 18px 44px rgba(60,40,130,.28);font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei','Segoe UI',sans-serif}
+  .admin-card h2{font-family:'Ma Shan Zheng','Kaiti SC','STKaiti','KaiTi',cursive;font-size:24px;font-weight:400;letter-spacing:.12em;margin-bottom:6px}
+  .admin-card .sub{font-size:13px;letter-spacing:.05em;color:rgba(255,255,255,.78);margin-bottom:18px}
+  .admin-card label{display:block;font-size:12px;letter-spacing:.18em;color:rgba(255,255,255,.65);margin-bottom:8px}
+  .url-box{display:flex;align-items:stretch;gap:8px;margin-bottom:18px}
+  .url-box input{flex:1;min-width:0;background:rgba(30,20,70,.32);border:1px solid rgba(255,255,255,.22);border-radius:12px;color:#fff;font-size:12px;padding:11px 12px;font-family:ui-monospace,Consolas,monospace;outline:none}
+  .url-box button{flex-shrink:0;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);color:#fff;font-size:13px;letter-spacing:.08em;border-radius:12px;padding:0 14px;cursor:pointer;touch-action:manipulation}
+  .url-box button:active{transform:scale(.95)}
+  .qr-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;margin:6px 0 20px}
+  .qr-wrap img{width:210px;height:210px;border-radius:16px;background:#fff;padding:10px}
+  .qr-wrap .tip{font-size:12px;color:rgba(255,255,255,.7);letter-spacing:.04em}
+  .steps{list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:12px;margin-bottom:18px}
+  .steps li{position:relative;padding-left:34px;font-size:13.5px;line-height:1.75;color:rgba(255,255,255,.88);letter-spacing:.03em}
+  .steps li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:2px;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.24);font-size:12px;display:flex;align-items:center;justify-content:center;color:#fff}
+  .warn{font-size:12px;line-height:1.8;color:rgba(255,235,190,.85);background:rgba(120,80,20,.18);border:1px solid rgba(255,220,150,.25);border-radius:12px;padding:10px 12px;letter-spacing:.03em}
+  .test-link{display:inline-block;margin-top:14px;color:#fff;font-size:13px;letter-spacing:.05em;text-decoration:underline;text-underline-offset:3px;opacity:.85}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="heartGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a58bf0"/>
+      <stop offset="1" stop-color="#5b3fa8"/>
+    </linearGradient>
+    <radialGradient id="metal" cx=".35" cy=".3" r="1">
+      <stop offset="0" stop-color="#e8e2f6"/>
+      <stop offset=".55" stop-color="#b9b0d4"/>
+      <stop offset="1" stop-color="#6f6690"/>
+    </radialGradient>
+  </defs>
+</svg>
+
+<div class="bg">
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b3"></div>
+</div>
+
+<!-- 品牌角标 -->
+<div class="brand" id="brand">
+  <div class="badge">
+    <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+  </div>
+  <div class="word">悄 悄 话</div>
+</div>
+
+<!-- ============ 播放页 ============ -->
+<div class="screen" id="player">
+  <div class="stage">
+    <div class="disc-wrap">
+      <div class="disc" id="disc">
+        <div class="label"><img src="./assets/cover.png" alt="封面"></div>
+        <div class="hole"></div>
+      </div>
+    </div>
+    <!-- 唱臂 -->
+    <svg class="tonearm" id="tonearm" viewBox="0 0 120 96" width="120" height="96">
+      <g>
+        <circle cx="26" cy="88" r="5.5" fill="#8f87ab"/>
+        <circle cx="16" cy="84" r="12" fill="url(#metal)"/>
+        <circle cx="16" cy="84" r="4.5" fill="#23202e"/>
+        <path d="M22 80 C 62 74, 92 54, 106 38" fill="none" stroke="#ddd6ee" stroke-width="6.5" stroke-linecap="round"/>
+        <path d="M24 77 C 62 71, 90 52, 103 37" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" opacity=".35"/>
+        <circle cx="24" cy="80" r="7" fill="#8f87ab"/>
+        <circle cx="106" cy="38" r="6.5" fill="url(#metal)"/>
+        <circle cx="110" cy="42" r="1.8" fill="#3a3550"/>
+      </g>
+    </svg>
+  </div>
+
+  <h1 class="title">小田的悄悄话</h1>
+  <p class="subtitle">A Whisper For You</p>
+
+  <div class="progress">
+    <span class="time" id="cur">00:00</span>
+    <div class="track" id="track">
+      <div class="rail">
+        <div class="fill" id="fill"></div>
+        <div class="thumb" id="thumb">
+          <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </div>
+      </div>
+    </div>
+    <span class="time end" id="dur">00:04</span>
+  </div>
+
+  <div class="controls">
+    <button class="ctl" id="shuffle" aria-label="随机播放">
+      <svg viewBox="0 0 24 24"><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.8-1.1 2-1.7 3.3-1.7H22"/><path d="m18 2 4 4-4 4"/><path d="M2 6h1.9c1.5 0 2.9.9 3.6 2.2"/><path d="M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8"/><path d="m18 14 4 4-4 4"/></svg>
+    </button>
+    <button class="ctl" id="prev" aria-label="上一首">
+      <svg viewBox="0 0 24 24"><path d="M6 5v14"/><path d="M20 6 10 12l10 6V6z"/></svg>
+    </button>
+    <button class="play" id="play" aria-label="播放">
+      <svg viewBox="0 0 24 24">
+        <path class="ic-heart" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+        <path class="ic-pause" d="M9 7v10M15 7v10"/>
+      </svg>
+    </button>
+    <button class="ctl" id="next" aria-label="下一首">
+      <svg viewBox="0 0 24 24"><path d="M18 5v14"/><path d="M4 6l10 6-10 6V6z"/></svg>
+    </button>
+    <button class="ctl" id="repeat" aria-label="循环播放">
+      <svg viewBox="0 0 24 24"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>
+    </button>
+  </div>
+</div>
+
+<div class="hint" id="hint">戴上耳机，点一下那颗心</div>
+
+<!-- ============ 锁定页 ============ -->
+<div class="screen" id="locked">
+  <div class="lock-card">
+    <div class="lock-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 17a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/><path d="M18 8h-1V6a5 5 0 0 0-10 0v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2zM9 6a3 3 0 0 1 6 0v2H9V6z"/></svg>
+    </div>
+    <h2>这张悄悄话</h2>
+    <p>只留给拿到 NFC 卡片的人<br>扫描卡片上的链接，才能听到 💌</p>
+  </div>
+</div>
+
+<!-- ============ 管理页 ============ -->
+<div class="screen admin" id="admin">
+  <div class="admin-card">
+    <h2>悄悄话 · 管理页</h2>
+    <p class="sub">把这个链接写进 NFC 卡片，别人扫卡片即可听</p>
+
+    <label>访客听歌链接（写入 NFC 卡片）</label>
+    <div class="url-box">
+      <input id="accessUrl" readonly>
+      <button id="copyBtn">复制</button>
+    </div>
+
+    <div class="qr-wrap">
+      <img id="qrImg" alt="二维码">
+      <div class="tip">手机扫码可先试听（效果等同刷 NFC 卡片）</div>
+    </div>
+
+    <label>NFC 卡片写入步骤</label>
+    <ol class="steps">
+      <li>手机安装「NFC Tools」App（iOS / Android 均有）</li>
+      <li>打开 App → 点「写入」→ 选择「URL」类型</li>
+      <li>粘贴上面的链接，把卡片贴近手机背面完成写入</li>
+      <li>写好后用手机 NFC 贴一下卡片，即可验证跳转</li>
+    </ol>
+
+    <div class="warn">⚠️ 链接里带访问口令，只有拿到这条链接的人能打开听歌页。页面本身不显示任何额外内容，音频也不会在未授权时加载。</div>
+
+    <a class="test-link" id="testLink" href="#" target="_blank" rel="noopener">→ 新窗口试听</a>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var TOKEN = 'xt-930ec0e07b7d6e524c';   // 访客口令（写在 NFC 链接里）
+  var ADMIN = 'qt-d4f53b2d255825c1e6';   // 管理页口令
+
+  var params = new URLSearchParams(location.search);
+  var player = document.getElementById('player');
+  var locked = document.getElementById('locked');
+  var admin  = document.getElementById('admin');
+  var brand  = document.getElementById('brand');
+  var hint   = document.getElementById('hint');
+
+  function show(el, hideBrand){
+    player.classList.remove('show');
+    locked.classList.remove('show');
+    admin.classList.remove('show');
+    el.classList.add('show');
+    brand.classList.toggle('hide', !!hideBrand);
+    hint.classList.toggle('hide', el !== player);
+  }
+
+  /* ---------- 访问控制 ---------- */
+  if (params.get('a') === ADMIN) {
+    show(admin, true);
+    var full = location.origin + location.pathname + '?t=' + TOKEN;
+    var input = document.getElementById('accessUrl');
+    input.value = full;
+    document.getElementById('qrImg').src =
+      'https://api.qrserver.com/v1/create-qr-code/?size=280x280&margin=10&data=' + encodeURIComponent(full);
+    document.getElementById('testLink').href = full;
+    document.getElementById('copyBtn').addEventListener('click', function(){
+      input.select();
+      try { document.execCommand('copy'); } catch(e){}
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(full).catch(function(){});
+      }
+      var b = this;
+      b.textContent = '已复制';
+      setTimeout(function(){ b.textContent = '复制'; }, 1600);
+    });
+    return;
+  }
+
+  if (params.get('t') !== TOKEN) {
+    show(locked, true);
+    return;
+  }
+
+  /* ---------- 播放器 ---------- */
+  show(player, false);
+
+  var audio = new Audio('./assets/voice.mp3');
+  audio.preload = 'metadata';
+
+  var disc     = document.getElementById('disc');
+  var tonearm  = document.getElementById('tonearm');
+  var playBtn  = document.getElementById('play');
+  var fill     = document.getElementById('fill');
+  var thumb    = document.getElementById('thumb');
+  var track    = document.getElementById('track');
+  var curEl    = document.getElementById('cur');
+  var durEl    = document.getElementById('dur');
+  var shuffle  = document.getElementById('shuffle');
+  var repeat   = document.getElementById('repeat');
+
+  var DUR = 0;
+
+  function fmt(s){
+    s = Math.max(0, Math.floor(s || 0));
+    var m = Math.floor(s / 60), sec = s % 60;
+    return (m < 10 ? '0' + m : m) + ':' + (sec < 10 ? '0' + sec : sec);
+  }
+
+  audio.addEventListener('loadedmetadata', function(){
+    DUR = audio.duration || 0;
+    durEl.textContent = fmt(DUR);
+  });
+  // 兜底：metadata 加载失败时给个估算
+  setTimeout(function(){ if (!DUR) durEl.textContent = fmt(4.7); }, 1200);
+
+  function setPct(p){
+    p = Math.min(1, Math.max(0, p));
+    fill.style.width = (p * 100) + '%';
+    thumb.style.left = (p * 100) + '%';
+  }
+
+  function setPlaying(on){
+    playBtn.classList.toggle('playing', on);
+    disc.classList.toggle('playing', on);
+    tonearm.classList.toggle('playing', on);
+  }
+
+  audio.addEventListener('timeupdate', function(){
+    if (!DUR) return;
+    setPct(audio.currentTime / DUR);
+    curEl.textContent = fmt(audio.currentTime);
+  });
+  audio.addEventListener('ended', function(){
+    setPlaying(false);
+    audio.currentTime = 0;
+    curEl.textContent = '00:00';
+    setPct(0);
+  });
+  audio.addEventListener('play',  function(){ setPlaying(true);  });
+  audio.addEventListener('pause', function(){ setPlaying(false); });
+
+  playBtn.addEventListener('click', function(){
+    if (audio.paused) {
+      audio.play().catch(function(){});
+    } else {
+      audio.pause();
+    }
+  });
+
+  /* 进度条点击 / 拖动 */
+  var dragging = false;
+  function seekFrom(e){
+    var r = track.getBoundingClientRect();
+    var x = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+    var p = x / r.width;
+    p = Math.min(1, Math.max(0, p));
+    setPct(p);
+    if (DUR) audio.currentTime = p * DUR;
+  }
+  track.addEventListener('pointerdown', function(e){
+    dragging = true;
+    track.classList.add('dragging');
+    track.setPointerCapture(e.pointerId);
+    seekFrom(e);
+    e.preventDefault();
+  });
+  track.addEventListener('pointermove', function(e){
+    if (dragging) seekFrom(e);
+  });
+  ['pointerup','pointercancel'].forEach(function(ev){
+    track.addEventListener(ev, function(){
+      dragging = false;
+      track.classList.remove('dragging');
+    });
+  });
+
+  document.getElementById('prev').addEventListener('click', function(){
+    audio.currentTime = 0; curEl.textContent = '00:00'; setPct(0);
+  });
+  document.getElementById('next').addEventListener('click', function(){
+    audio.currentTime = 0; curEl.textContent = '00:00'; setPct(0);
+  });
+  shuffle.addEventListener('click', function(){
+    shuffle.classList.toggle('active');
+  });
+  repeat.addEventListener('click', function(){
+    var on = repeat.classList.toggle('active');
+    audio.loop = on;
+  });
+
+  /* 防长按弹菜单 / 拖选 */
+  document.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+})();
+</script>
+</body>
+</html>
